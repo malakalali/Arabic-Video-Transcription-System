@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arabic Video Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background-color: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background-color: #f0f4ff;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .model-selection {
+            margin-bottom: 30px;
+        }
+        
+        .model-selection label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .model-selection select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .model-selection select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .process-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e1e5e9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            display: none;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .model-loading-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        
+        .model-loading-info ul {
+            margin: 10px 0 0 20px;
+        }
+        
+        .model-loading-info li {
+            margin: 5px 0;
+        }
+        
+        .gpu-status {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .gpu-status h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .gpu-available {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .gpu-unavailable {
+            color: #6c757d;
+        }
+        
+        .model-recommendations {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .model-recommendations h4 {
+            margin-top: 0;
+            color: #495057;
+            text-align: center;
+        }
+        
+        .model-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .model-card {
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .model-card.gpu-optimized {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .model-card.cpu-only {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        
+        .model-card h5 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .model-card p {
+            margin: 5px 0;
+            font-size: 0.85em;
+        }
+        
+        @media (max-width: 768px) {
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .status-message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .file-info {
+            display: none;
+            background-color: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .file-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .file-info p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .preload-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .preload-btn:hover {
+            background-color: #218838;
+        }
+        
+        .preload-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Arabic Video Processor</h1>
+            <p>Upload your Arabic video to generate subtitles with transliteration</p>
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Click to upload or drag and drop</div>
+            <div class="upload-subtext">Supports MP4, MOV, AVI, MKV files</div>
+            <input type="file" id="videoFile" class="file-input" accept="video/*">
+        </div>
+        
+        <div class="file-info" id="fileInfo">
+            <h3 id="fileName"></h3>
+            <p id="fileSize"></p>
+        </div>
+        
+        <div class="model-selection">
+            <label for="modelSize">Whisper Model Size:</label>
+            <select id="modelSize">
+                <option value="tiny">Tiny (Fastest, ~60-70% accuracy)</option>
+                <option value="base">Base (Fast, ~70-80% accuracy)</option>
+                <option value="small">Small (Medium, ~80-85% accuracy)</option>
+                <option value="medium">Medium (Good, ~85-90% accuracy)</option>
+                <option value="large-v3">Large-v3 (Best, ~90-95% accuracy) ⚠️ Very Slow!</option>
+            </select>
+            <button type="button" id="preloadModelBtn" class="preload-btn">
+                🧠 Preload Model
+            </button>
+            <div id="modelStatus" style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                📊 <strong>Model Status:</strong> <span id="modelStatusText">Checking...</span>
+            </div>
+            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                🚀 <strong>Large-v3 Recommended:</strong> Maximum accuracy (~90-95%) for best transcription and translation quality.
+                <strong>Important:</strong> Preload the model before uploading videos to avoid upload timeouts!
+            </p>
+        </div>
+        
+        <div class="colab-status" id="colabStatus" style="display: none;">
+            <h3>🎯 Google Colab Environment</h3>
+            <div id="colabInfo" style="font-size: 0.9em; color: #666;">
+                <p>🔍 <strong>Environment:</strong> <span id="colabEnv">Checking...</span></p>
+                <p>💻 <strong>CPU:</strong> <span id="colabCPU">Checking...</span></p>
+                <p>🧠 <strong>Memory:</strong> <span id="colabMemory">Checking...</span></p>
+                <p>🚀 <strong>GPU:</strong> <span id="colabGPU">Checking...</span></p>
+            </div>
+            <button type="button" id="checkColabBtn" class="preload-btn" style="margin-top: 10px;">
+                🔍 Check Colab Status
+            </button>
+        </div>
+        
+        <div class="gpu-status" id="gpuStatusSection">
+            <h3>🚀 GPU Acceleration Status</h3>
+            <div style="font-size: 0.9em; color: #666;">
+                <p><strong>Current Device:</strong> <span id="gpuStatus">Checking...</span></p>
+                <div class="performance-guide">
+                    <p style="font-size: 0.8em; margin-top: 10px;">
+                        💡 <strong>Performance Guide:</strong>
+                    </p>
+                    <ul style="font-size: 0.8em; margin: 5px 0 0 20px;">
+                        <li><strong>Apple MPS GPU:</strong> 3-5x faster than CPU for small/medium models</li>
+                        <li><strong>CUDA GPU:</strong> 5-10x faster than CPU for all models</li>
+                        <li><strong>CPU:</strong> Slower but most compatible with all models</li>
+                        <li><strong>Large-v3:</strong> Uses CPU for stability (Apple MPS compatibility issues)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="processing-options">
+            <label>
+                <input type="checkbox" id="useExistingSRT" checked>
+                ✅ Always use actual video content (recommended)
+            </label>
+            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                🔒 <strong>Security:</strong> This ensures your video gets the correct transcription and translation, 
+                not content from other videos. Uncheck only if you have a matching SRT file.
+            </p>
+        </div>
+        
+        <button class="process-btn" id="processBtn" disabled>
+            Process Video
+        </button>
+        
+        <div id="status" class="status"></div>
+        <div id="progressContainer" class="progress-container" style="display: none;">
+            <div class="progress-bar">
+                <div id="progressBar" class="progress-fill"></div>
+            </div>
+            <div id="progressText">Processing...</div>
+        </div>
+        <div id="modelLoadingInfo" class="model-loading-info" style="display: none;">
+            <p>⚠️ <strong>Large-v3 Model Warning:</strong></p>
+            <ul>
+                <li>This model is very resource-intensive and may take 10-30 minutes for a 5-minute video</li>
+                <li>Your browser may become unresponsive during processing</li>
+                <li>Consider using Medium or Small models for faster results</li>
+                <li>For best results, use Tiny or Base models first to test</li>
+                <li><strong>GPU Note:</strong> Large-v3 uses CPU for stability (Apple MPS compatibility)</li>
+            </ul>
+        </div>
+        
+        <div class="model-recommendations">
+            <h4>🎯 Model Recommendations for Speed:</h4>
+            <div class="model-grid">
+                <div class="model-card gpu-optimized">
+                    <h5>🚀 GPU Optimized (Fastest)</h5>
+                    <p><strong>Tiny:</strong> 1-3 minutes, 60-70% accuracy</p>
+                    <p><strong>Base:</strong> 2-5 minutes, 70-80% accuracy</p>
+                    <p><strong>Small:</strong> 3-8 minutes, 80-85% accuracy</p>
+                    <p><strong>Medium:</strong> 5-15 minutes, 85-90% accuracy</p>
+                </div>
+                <div class="model-card cpu-only">
+                    <h5>💻 CPU Only (Most Accurate)</h5>
+                    <p><strong>Large-v3:</strong> 10-30 minutes, 90-95% accuracy</p>
+                    <p><em>Note: Uses CPU for maximum compatibility</em></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('videoFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const processBtn = document.getElementById('processBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const statusMessage = document.getElementById('statusMessage');
+        const modelSize = document.getElementById('modelSize');
+        const preloadModelBtn = document.getElementById('preloadModelBtn');
+        const modelStatusText = document.getElementById('modelStatusText');
+
+        let selectedFile = null;
+
+        // Upload area click handler
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = `Size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            fileInfo.style.display = 'block';
+            processBtn.disabled = false;
+            hideStatusMessage();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showStatusMessage(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        function hideStatusMessage() {
+            statusMessage.style.display = 'none';
+        }
+        
+        async function checkModelStatus() {
+            try {
+                const response = await fetch('/api/model-status');
+                const result = await response.json();
+                
+                if (result.loaded) {
+                    modelStatusText.textContent = `✅ ${result.model} loaded and ready`;
+                    modelStatusText.style.color = '#28a745';
+                    preloadModelBtn.textContent = '✅ Model Ready';
+                    preloadModelBtn.disabled = true;
+                    preloadModelBtn.style.backgroundColor = '#28a745';
+                } else {
+                    modelStatusText.textContent = '❌ No model loaded - Preload required';
+                    modelStatusText.style.color = '#dc3545';
+                    preloadModelBtn.textContent = '🧠 Preload Model';
+                    preloadModelBtn.disabled = false;
+                    preloadModelBtn.style.backgroundColor = '#28a745';
+                }
+            } catch (error) {
+                modelStatusText.textContent = '❌ Error checking status';
+                modelStatusText.style.color = '#dc3545';
+            }
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Processing...';
+            
+            // Show model loading info for large models
+            const modelLoadingInfo = document.getElementById('modelLoadingInfo');
+            if (modelSize.value.includes('large-v3')) { // Changed to check for 'large-v3'
+                modelLoadingInfo.style.display = 'block';
+            } else {
+                modelLoadingInfo.style.display = 'none';
+            }
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+            document.getElementById('modelLoadingInfo').style.display = 'none';
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+        
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = percent + '%';
+            progressText.textContent = text;
+        }
+        
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+
+        // Check model status on page load
+        checkModelStatus();
+        
+        // Check Colab status on page load
+        checkColabStatus();
+        
+        // Check ffmpeg availability on page load
+        checkFFmpegStatus();
+        
+        // Check GPU status on page load
+        checkGPUStatus();
+        
+        // Preload model button click handler
+        preloadModelBtn.addEventListener('click', async () => {
+            const selectedModel = modelSize.value;
+            preloadModelBtn.disabled = true;
+            preloadModelBtn.textContent = '🔄 Loading...';
+            
+            try {
+                const response = await fetch(`/api/preload-model/${selectedModel}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatusMessage(`✅ ${result.message}`, 'success');
+                    checkModelStatus();
+                } else {
+                    showStatusMessage(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatusMessage(`❌ Failed to preload model: ${error.message}`, 'error');
+            } finally {
+                preloadModelBtn.disabled = false;
+                preloadModelBtn.textContent = '🧠 Preload Model';
+            }
+        });
+        
+        // Check Colab status button click handler
+        document.getElementById('checkColabBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('checkColabBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Checking...';
+            
+            try {
+                await checkColabStatus();
+                btn.textContent = '✅ Status Updated';
+                setTimeout(() => {
+                    btn.textContent = '🔍 Check Colab Status';
+                    btn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                btn.textContent = '❌ Error';
+                setTimeout(() => {
+                    btn.textContent = '🔍 Check Colab Status';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
+        
+        // Function to check Colab status
+        async function checkColabStatus() {
+            try {
+                const response = await fetch('/api/colab-status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show Colab status section
+                    document.getElementById('colabStatus').style.display = 'block';
+                    
+                    // Update Colab info
+                    const colabEnv = result.colab_info.is_colab ? '✅ Google Colab' : '🏠 Local Environment';
+                    document.getElementById('colabEnv').textContent = colabEnv;
+                    
+                    const cpuInfo = `${result.system_info.cpu_count} cores, ${result.system_info.memory_total_gb}GB RAM`;
+                    document.getElementById('colabCPU').textContent = cpuInfo;
+                    
+                    const memoryInfo = `${result.system_info.memory_available_gb}GB available (${result.system_info.memory_percent}% used)`;
+                    document.getElementById('colabCPU').textContent = cpuInfo;
+                    
+                    if (result.torch_info.cuda_available) {
+                        const gpuInfo = `✅ ${result.torch_info.device_name} (${result.torch_info.gpu_memory_gb}GB)`;
+                        document.getElementById('colabGPU').textContent = gpuInfo;
+                    } else if (result.torch_info.mps_available) {
+                        document.getElementById('colabGPU').textContent = '✅ Apple MPS (Metal)';
+                    } else {
+                        document.getElementById('colabGPU').textContent = '💻 CPU Only';
+                    }
+                }
+            } catch (error) {
+                console.log('Colab status check failed (may be local environment):', error);
+                // Hide Colab status section if not available
+                document.getElementById('colabStatus').style.display = 'none';
+            }
+        }
+        
+        // Function to check ffmpeg status
+        async function checkFFmpegStatus() {
+            try {
+                const response = await fetch('/api/check-ffmpeg');
+                const result = await response.json();
+                
+                if (result.success && !result.available) {
+                    showStatus(`⚠️ FFmpeg not available: ${result.error}. Subtitle burning may fail.`, 'error');
+                }
+            } catch (error) {
+                console.log('FFmpeg status check failed:', error);
+            }
+        }
+        
+        // Function to check GPU status
+        async function checkGPUStatus() {
+            try {
+                const response = await fetch('/api/gpu-status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    let gpuText = '';
+                    if (result.cuda_available) {
+                        gpuText = `🚀 CUDA GPU: ${result.device_name}`;
+                        if (result.memory_info) {
+                            gpuText += ` (${result.memory_info.total_gb}GB total)`;
+                        }
+                    } else if (result.mps_available) {
+                        gpuText = `🚀 Apple MPS GPU: ${result.device_name}`;
+                    } else {
+                        gpuText = '💻 CPU Only';
+                    }
+                    
+                    // Update GPU status display
+                    const gpuStatusElement = document.getElementById('gpuStatus');
+                    if (gpuStatusElement) {
+                        gpuStatusElement.textContent = gpuText;
+                        gpuStatusElement.className = result.cuda_available || result.mps_available ? 'gpu-available' : 'gpu-unavailable';
+                    }
+                }
+            } catch (error) {
+                console.log('GPU status check failed:', error);
+            }
+        }
+        
+        // Process button click handler
+        processBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showStatus('Please select a video file first.', 'error');
+                return;
+            }
+
+            // Show warning for large models
+            if (modelSize.value === 'large-v3') {
+                if (!confirm('⚠️ Large-v3 model is very slow and resource-intensive!\n\nA 5-minute video may take 10-30 minutes to process.\n\nAre you sure you want to continue?')) {
+                    return;
+                }
+            }
+
+            processBtn.disabled = true;
+            hideStatus();
+            showProgress();
+            showStatus(`Starting video processing with ${modelSize.value} model...`, 'info');
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('model_size', modelSize.value);
+
+            try {
+                updateProgress(10, 'Uploading video...');
+                
+                const response = await fetch('/api/process-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Processing failed');
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateProgress(100, 'Processing complete!');
+                    showStatus(`✅ Video processed successfully! Output: ${result.output_file}`, 'success');
+                    
+                    // Show download link
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `/output_videos/${result.output_file}`;
+                    downloadLink.download = result.output_file;
+                    downloadLink.textContent = 'Download Processed Video';
+                    downloadLink.className = 'download-link';
+                    downloadLink.style.display = 'block';
+                    downloadLink.style.marginTop = '20px';
+                    downloadLink.style.textAlign = 'center';
+                    downloadLink.style.padding = '10px';
+                    downloadLink.style.backgroundColor = '#007bff';
+                    downloadLink.style.color = 'white';
+                    downloadLink.style.textDecoration = 'none';
+                    downloadLink.style.borderRadius = '5px';
+                    
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.appendChild(downloadLink);
+                    
+                    setTimeout(() => {
+                        hideProgress();
+                    }, 5000);
+                } else {
+                    showStatus(`❌ Processing failed: ${result.error}`, 'error');
+                    hideProgress();
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                hideProgress();
+            } finally {
+                processBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
