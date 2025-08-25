@@ -1,9 +1,0 @@
-openai-whisper
-faster-whisper
-ffmpeg-python
-moviepy
-pydub
-numpy<2
-torch==2.2.2
-torchvision==0.17.2
-torchaudio==2.2.2
